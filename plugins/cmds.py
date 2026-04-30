@@ -222,12 +222,14 @@ def get_alternate_tags_paths(view, tags_file):
 
     :returns: list of valid, existing paths to additional tag files to search
     """
-    tags_paths = "%s_search_paths" % tags_file
-    search_paths = [tags_file]
+    search_paths = []
 
-    # read and add additional tag file paths from file
-    if os.path.exists(tags_paths):
-        search_paths.extend(open(tags_paths, encoding="utf-8").read().split("\n"))
+    if tags_file:
+        search_paths.append(tags_file)
+        tags_paths = "%s_search_paths" % tags_file
+        # read and add additional tag file paths from file
+        if os.path.exists(tags_paths):
+            search_paths.extend(open(tags_paths, encoding="utf-8").read().split("\n"))
 
     # read and add additional tag file paths from 'extra_tag_paths' setting
     try:
@@ -238,7 +240,7 @@ def get_alternate_tags_paths(view, tags_file):
     except Exception as e:
         print(e)
 
-    if os.path.exists(tags_paths):
+    if tags_file and os.path.exists(tags_file):
         for extrafile in setting("extra_tag_files"):
             search_paths.append(
                 os.path.normpath(os.path.join(os.path.dirname(tags_file), extrafile))
@@ -493,10 +495,6 @@ def ctags_goto_command(jump_directly=False):
             view = self.view
             tags_file = find_tags_relative_to(view.file_name(), setting("tag_file"))
 
-            if not tags_file:
-                status_message("Can't find any relevant tags file")
-                return
-
             result = func(self, self.view, args, tags_file)
             show_tag_panel(self.view, result, jump_directly)
 
@@ -615,10 +613,6 @@ class SearchForDefinition(sublime_plugin.WindowCommand):
     def on_done(self, symbol):
         view = self.window.active_view()
         tags_file = find_tags_relative_to(view.file_name(), setting("tag_file"))
-
-        if not tags_file:
-            status_message("Can't find any relevant tags file")
-            return
 
         result = JumpToDefinition.run(symbol, None, "", [], view, tags_file)
         show_tag_panel(view, result, True)
